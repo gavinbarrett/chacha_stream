@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 uint32_t rotl(uint32_t* byte, uint8_t amt) {
@@ -36,7 +37,7 @@ void print_stream(uint32_t* keystream) {
 		printf("%08x", conv(keystream[i]));
 }
 
-void chacha(uint32_t ctr) {
+void chacha(unsigned char* str, uint32_t ctr) {
 	// allocate an array of 16 words for the 4x4 chacha matrix
 	uint32_t a[16];
 
@@ -91,21 +92,38 @@ void chacha(uint32_t ctr) {
 	for (int j = 0; j < 16; j++) {
 		b[j] += a[j];
 	}
-	print_stream(b);
+	//print_stream(b);
+	// ready the keystream buffer with correct index
+	int k = 0 + (ctr*64);
+	for (int i = 0; i < 16; i++) {
+		for (int j = 0; j < 4; j++) {
+			str[k] = b[i] >> ((8*j) & 0xff);
+			k++;
+		}
+	}
 }
 
 int main(int argc, char** argv) {
 	//char* str = "This is my secret message";
 	size_t sz = strlen(argv[1]);
 	int amt = (sz / 64) + 1;
-	//printf("%d\n", (25/64));
-	//printf("%ld\n", (sz/64));
-	//printf("%ld\n", sz);
-	//printf("keystream:\n");
-	//uint32_t* ks;
-	for (int i = 0; i < amt; i++) {
-		chacha(i);
-		printf("\n");
+	unsigned char* ptr;
+
+	// dynamically allocate an array
+	ptr = (unsigned char*)malloc((64*amt)*sizeof(unsigned char));
+
+	if (!ptr) {
+		printf("Cannot allocate memory!\n");
+		exit(0);
 	}
+
+	for (int i = 0; i < amt; i++) {
+		chacha(ptr, i);
+	}
+	for (int j = 0; j < (64*amt); j++)
+		printf("%x", ptr[j]);
+
+	// deallocate memory
+	free(ptr);
 	return 0;
 }
