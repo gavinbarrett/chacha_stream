@@ -108,20 +108,31 @@ int main(int argc, char** argv) {
 	size_t sz = strlen(argv[1]);
 	int amt = (sz / 64) + 1;
 	unsigned char* ptr;
-
+	unsigned char st[sz];
+	
 	// dynamically allocate an array
 	ptr = (unsigned char*)malloc((64*amt)*sizeof(unsigned char));
-
+	
+	// check to make sure memory was allocated
 	if (!ptr) {
 		printf("Cannot allocate memory!\n");
 		exit(0);
 	}
 
+	// generate the keystream
 	for (int i = 0; i < amt; i++) {
 		chacha(ptr, i);
 	}
-	for (int j = 0; j < (64*amt); j++)
-		printf("%x", ptr[j]);
+
+	// encrypt the input stream with the keystream
+	for (int j = 0; j < sz; j++)
+		st[j] = argv[1][j] ^ ptr[j];
+
+	// print out each byte as a hex
+	for (int j = 0; j < sz; j++) {
+		printf("%02x", st[j]);
+	}
+	printf("\n");
 
 	// deallocate memory
 	free(ptr);
