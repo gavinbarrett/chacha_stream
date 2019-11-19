@@ -12,9 +12,9 @@ uint32_t rotl(uint32_t* byte, uint8_t amt) {
 	return y | (*byte >> (32-amt));
 }
 
-uint32_t conv(uint32_t byte) {
+uint32_t conv(uint32_t word) {
 	/* convert endianness on a 32-bit buffer */
-	return ((byte << 24) | ((byte << 8) & 0x00FF0000) | ((byte >> 8) & 0x0000FF00) | (byte >> 24));
+	return ((word << 24) | ((word << 8) & 0x00FF0000) | ((word >> 8) & 0x0000FF00) | (word >> 24));
 }
 
 void qr(uint32_t* a, uint32_t* b, uint32_t* c, uint32_t* d) {
@@ -54,49 +54,52 @@ void load_constant(uint32_t* matrix) {
 	matrix[1] = 0x3320646e;		// "nd 3"
 	matrix[2] = 0x79622d32;		// "2-by"
 	matrix[3] = 0x6b206574;		// "te k"
+
 }
 
 void load_key(uint32_t* matrix, uint32_t* key) {
 	for (int i = 0; i < 8; i++) {
-		matrix[i+4] = key[i];
-		printf("%08x", key[i]);
-	}
-	printf("Matrix contents:\n");
-	for (int j = 0; j < 8; j++) {
-		printf("%08x", matrix[j+4]);
+		matrix[i+4] = conv(key[i]);
+		//printf("%08x ", key[i]);
+		//printf("%08x", matrix[i+4]);
 	}
 	printf("\n");
 }
 
+void load_nonce(uint32_t* matrix, uint32_t* nonce) {
+	for (int i = 0; i < 2; i++) {
+		matrix[i+14] = nonce[i];
+		printf("%08x", matrix[i+14]);
+	}
+}
+
 //FIXME: create a super function that will take in a key
-void chacha(uint32_t* a, unsigned char* str, uint32_t ctr) {
+void chacha(uint32_t* key, uint32_t* nonce, unsigned char* str, uint32_t ctr) {
 	// allocate an array of 16 words for the 4x4 chacha matrix
+	uint32_t a[16];
 	a[12] = ctr;
-
-	load_constant(a);
-
-	//load_key(a, key);
-
-	// load the key - 256 bits
-	a[4] = 0x03020100;
-	a[5] = 0x07060504;
-	a[6] = 0x0b0a0908;
-	a[7] = 0x0f0e0d0c;
-	a[8] = 0x13121110;
-	a[9] = 0x17161514;
-	a[10] = 0x1b1a1918;
-	a[11] = 0x1f1e1d1c;
-
-	// load the nonce - 96 bits
 	a[13] = 0x00000000;
-	a[14] = 0x03020100;
-	a[15] = 0x07060504;
+
+	// load the matrix
+	load_constant(a);
+	load_key(a, key);
+	load_nonce(a, nonce);
+
+/*
+	printf("\nChaCha state:\n");
+	for (int j = 0; j < 16; j++) {
+		printf("%08x\n", a[j]);
+	}
+*/
+
+	printf("\nkey:\n%08x%08x%08x%08x%08x%08x%08x%08x\n", key[0],key[1],key[2],key[3],key[4],key[5],key[6],key[7]);
+
+	printf("nonce:\n%08x%08x\n",conv(a[14]),conv(a[15]));
 
 	// copy input vector
 	uint32_t b[16];
 	for (int j = 0; j < 16; j++)
 		b[j] = a[j];
-
 	// perform the quarter round function 20 times total (twice per loop)
 	for (int i = 0; i < 10; i++) {
 		// column rounds
@@ -113,16 +116,22 @@ void chacha(uint32_t* a, unsigned char* str, uint32_t ctr) {
 
 	// add the mixed matrix to the original matrix mod 2^32 to generate the keystream
 	// b now contains 64 bytes of pseudo random data to be used in our stream cipher
-	for (int j = 0; j < 16; j++)
+	for (int j = 0; j < 16; j++) {
 		b[j] += a[j];
+		//printf("%02x", b[j]);
+	}
+	//printf("\n");
 	// ready the keystream buffer with correct index
 	int k = 0 + (ctr*64);
+	printf("\nkeystream:\n");
 	for (int i = 0; i < 16; i++) {
 		for (int j = 0; j < 4; j++) {
 			str[k] = b[i] >> ((8*j) & 0xff);
+			printf("%02x", str[k]);
 			k++;
 		}
 	}
+	printf("\n");
 }
 
 void chacha_setup(unsigned char* key, unsigned char* nonce) {
@@ -137,7 +146,6 @@ void chacha_setup(unsigned char* key, unsigned char* nonce) {
 
 int main(int argc, char** argv) {
 	//char* str = "This is my secret message";
-	/*
 	size_t sz = strlen(argv[1]);
 	int amt = (sz / 64) + 1;
 	unsigned char* ptr;
@@ -152,50 +160,30 @@ int main(int argc, char** argv) {
 		exit(0);
 	}
 
-	uint32_t a[16];
-	// generate the keystream (ptr)
-	for (int i = 0; i < amt; i++) {
-		chacha(a, ptr, i);
-	}
-
-	// encrypt the input stream with the keystream
-	for (int j = 0; j < amt*64; j++) {
-		printf("%02x", ptr[j]);
-		st[j] = argv[1][j] ^ ptr[j];
-	}
-
-	// print out each byte as a hex
-	for (int j = 0; j < sz; j++) {
-		printf("%c", st[j]);
-	}
-	
-	printf("\n");
-	for (int j = 0; j < sz; j++) {
-		st[j] ^= ptr[j];
-	}
-	
-	// deallocate memory
-	free(ptr);
-
-	for(int i = 0; i < 64; i++) {
-		printf("%02x", buff[i]);
-	}
-	*/
-//	unsigned char t[] = "heyo";
-//	unsigned char d[] = "see";
-//	chacha_setup(t, d);
-
 	uint32_t x[8];
-	uint32_t y[16];
 	int fn = open("/dev/urandom", O_RDONLY);
 	read(fn, x, 32);
 
-	for (int i = 0; i < 8; i++) {
-		printf("%08x", x[i]);
+	uint32_t y[2];
+	int fn2 = open("/dev/urandom", O_RDONLY);
+	read(fn2, y, 32);
+
+	// generate the keystream (ptr)
+	for (int i = 0; i < amt; i++) {
+		chacha(x, y, ptr, i);
 	}
 	printf("\n");
-	
-	load_key(y,x);
-
+	// encrypt the input stream with the keystream
+	for (int j = 0; j < sz/*amt*64*/; j++) {
+		printf("%02x", ptr[j]);
+		st[j] = argv[1][j] ^ ptr[j];
+	}
+	printf("\nKeystream xored with plaintext:\n");
+	for (int j = 0; j < sz; j++) {
+		printf("%02x", st[j]);
+	}
+	printf("\n");
+	// deallocate memory
+	free(ptr);
 	return 0;
 }
