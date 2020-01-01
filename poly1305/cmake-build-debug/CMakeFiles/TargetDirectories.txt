@@ -1,0 +1,3 @@
+/home/gavin/Development/chacha/poly1305/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/gavin/Development/chacha/poly1305/cmake-build-debug/CMakeFiles/poly_gmp.dir
+/home/gavin/Development/chacha/poly1305/cmake-build-debug/CMakeFiles/edit_cache.dir
