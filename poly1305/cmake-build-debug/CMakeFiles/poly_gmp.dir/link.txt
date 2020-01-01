@@ -1,1 +1,0 @@
-/usr/bin/cc -lgmp -g   CMakeFiles/poly_gmp.dir/poly_gmp.c.o  -o poly_gmp 
