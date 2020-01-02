@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/gavin/Development/chacha/poly1305/poly_gmp.c
+gmp.h
+-
+math.h
+-
+stdint.h
+-
+inttypes.h
+-
+stdlib.h
+-
+stdio.h
+-
+string.h
+-
+
