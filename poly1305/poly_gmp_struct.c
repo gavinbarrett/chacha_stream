@@ -1,10 +1,4 @@
-#include <gmp.h>
-#include <math.h>
-#include <stdint.h>
-#include <inttypes.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <poly1305.h>
 
 typedef struct PolyAuth {
 	mpz_t r;
@@ -180,9 +174,4 @@ void poly1305_mac(/*char* msg, char* key*/) {
 	}
 	// deallocate all gmp numbers
 	destroy(&auth);
-}
-
-int main(){
-	poly1305_mac();
-	return 0;
 }
