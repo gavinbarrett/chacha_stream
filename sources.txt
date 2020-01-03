@@ -1,5 +1,0 @@
-Bernstein paper:
-https://cr.yp.to/chacha/chacha-20080128.pdf
-
-Internet Research Task Force Analysis of ChaCha20 and Poly1305
-https://tools.ietf.org/html/rfc7539
