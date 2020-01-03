@@ -181,7 +181,7 @@ int main(){
 	char* tag;
 	tag = num_to_le_bytes(acc);
 	printf("\ntag: %s\n", tag);
-	
+
 	// deallocate all gmp numbers
 	clean_up(acc,p,r,s,mask,b_var);
 
