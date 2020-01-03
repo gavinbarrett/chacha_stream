@@ -1,1 +1,0 @@
-/usr/bin/cc -lgmp -g   CMakeFiles/poly_gmp_struct.dir/poly_gmp_struct.c.o  -o poly_gmp_struct 
