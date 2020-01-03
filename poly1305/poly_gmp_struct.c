@@ -84,8 +84,8 @@ void rev_str(char str[], char s[], size_t start, size_t end) {
 	}
 }
 
-char* num_to_le_bytes(mpz_t acc) {
-	char output[34];
+void num_to_le_bytes(mpz_t acc, char output[]) {
+	//char output[34];
 	char tmp1;
 	char tmp2;
 	
@@ -103,10 +103,12 @@ char* num_to_le_bytes(mpz_t acc) {
 		start+=2;
 		end-=2;
 	}
-	char* out = output;
-	out++;
-
-	return out;
+	// terminate the tag buffer
+	output[33] = '\0';
+	// increment past the head of the array
+	char* out = output; out++;
+	// copy the buffer to the output array
+	memcpy(output,out,33);
 }
 
 void compute_cycle(PolyAuth* auth) {
@@ -161,18 +163,21 @@ void poly1305_mac(/*char* msg, char* key*/) {
 	// add acc to second half of the key (s)
 	mpz_add(auth.acc, auth.acc, auth.s);
 
-	//char z[34];
-	//mpz_get_str(z,16, auth.a_var);
+	char z[34];
+	mpz_get_str(z, 16, auth.a_var);
 	//printf("\n%s\n", z);
 /*
 	for(int i = 0; i < end_sz; i++) {
-		printf("%c ", br[i]);
+		printf("%02x ", br[i]);
 	}
 */
 	// print first 16 little endian bytes as the tag
-	char* tag;
-	tag = num_to_le_bytes(auth.acc);
-	printf("\ntag: %s\n", tag);
+	char tag[34];
+	num_to_le_bytes(auth.acc, tag);
+	printf("tag: %s\n", tag);
+	for (int i = 0; i < 34; i++) {
+
+	}
 	// deallocate all gmp numbers
 	destroy(&auth);
 }
