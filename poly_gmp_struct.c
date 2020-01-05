@@ -32,13 +32,97 @@ void initialize_p(mpz_t p) {
 	mpz_clear(f);
 }
 
-PolyAuth setup(/* pass in key and message */) {
+void halve_key(unsigned char* key, unsigned char* key1, unsigned char* key2) {
+	size_t d = strlen((char*)key)/2;
+	
+	for (int i = 0; i < d*2; i++) {
+		// first half of the key
+		if (i < d)
+			key1[i] = (unsigned char)key[i];
+		else
+			key2[i-d] = (unsigned char)key[i];
+	}
+	/*
+	printf("\n");
+	for (int j = 0; j < d; j++) {
+		printf("%02x ", key1[j]);
+	}
+	printf("\n");
+	for (int j = 0; j < d; j++) {
+		printf("%02x ", key2[j]);
+	}
+	*/
+}
+
+void rev_str(char str[], char s[], size_t start, size_t end) {
+	char tmp;
+	char tmps[end];
+	tmps[0] = '\0';
+	size_t start_s = start;
+	size_t end_s = end;
+	str[end-1] = 0x01;
+	while (start < end) {
+		tmp = str[start];
+		str[start] = str[end];
+		str[end] = tmp;
+		start++;
+		end--;
+	}
+	// FIXME: refactor into two functions
+	for (; start_s < end_s; start_s++) {
+		sprintf(tmps, "%02x", str[start_s+1]);
+		strcat(s, tmps);
+	}
+}
+
+
+void hex_to_string(unsigned char* hex, char* string) {
+	int sz = (int)strlen((char*)hex);
+	int sz_c = sz;
+	char tmps[sz+1];
+	tmps[0] = '\0';
+	char tmp;
+	int i = 0;
+	while (i < sz) {
+		tmp = hex[i];
+		hex[i] = hex[sz];
+		hex[sz] = tmp;
+		i++;
+		sz--;
+	}
+	for (int j = 0; j < sz_c; j++) {
+		sprintf(tmps, "%02x", hex[j+1]);
+		strcat(string, tmps);
+	}
+}
+
+PolyAuth setup(unsigned char* key) {
 	/* return a PolyAuth struct */
 	PolyAuth auth;
 	// FIXME: split key into two fragments: r and s
 	// set key fragments
-	mpz_init_set_str(auth.r, "a806d542fe52447f336d555778bed685", 16);
-	mpz_init_set_str(auth.s, "1bf54941aff6bf4afdb20dfb8a800301", 16);
+	printf("\n");
+	for (int i = 0; i < strlen((char*)key); i++) {
+		printf("%02x ", (unsigned char)key[i]);
+	}
+	//FIXME transform key char array ordering from hex to the opposite endianness with characters 
+
+	unsigned char kr1[17] = {0};
+	unsigned char ks1[17] = {0};
+	// break the key into two fragments, r and s
+	halve_key(key, kr1, ks1);
+	
+	char f[33] = {0};
+	char h[33] = {0};
+	// reverse the byte ordering and read hex as a string
+	hex_to_string(kr1, f);
+	hex_to_string(ks1, h);
+
+	//mpz_init_set_str(auth.r, "a806d542fe52447f336d555778bed685", 16);
+	//mpz_init_set_str(auth.s, "1bf54941aff6bf4afdb20dfb8a800301", 16);
+	mpz_init_set_str(auth.r, f, 16);
+	mpz_init_set_str(auth.s, h, 16);
+	
 	// set mask for clamping r
 	mpz_init_set_str(auth.mask, "ffffffc0ffffffc0ffffffc0fffffff", 16);
 	// set accumulator variable to 0
@@ -62,26 +146,6 @@ void destroy(PolyAuth* auth) {
 	mpz_clear(auth->block);
 }
 
-void rev_str(char str[], char s[], size_t start, size_t end) {
-	char tmp;
-	char tmps[end];
-	tmps[0] = '\0';
-	size_t start_s = start;
-	size_t end_s = end;
-	str[end-1] = 0x01;
-	while (start < end) {
-		tmp = str[start];
-		str[start] = str[end];
-		str[end] = tmp;
-		start++;
-		end--;
-	}
-	// FIXME: refactor into two functions
-	for (; start_s < end_s; start_s++) {
-		sprintf(tmps, "%02x", str[start_s+1]);
-		strcat(s, tmps);
-	}
-}
 
 void num_to_le_bytes(mpz_t acc, char output[]) {
 	//char output[34];
@@ -120,11 +184,11 @@ void compute_cycle(PolyAuth* auth) {
 	mpz_mod(auth->acc, auth->acc, auth->p);
 }
 
-void poly1305_mac(char* msg) {
+void poly1305_mac(unsigned char* key, char* msg) {
 	// input:  key (char*), msg (char*)
 	// output: tag (char*)
 	// FIXME: pass in key and message
-	PolyAuth auth = setup();
+	PolyAuth auth = setup(key);
 	size_t sz;
 	sz = strlen(msg);
 	
@@ -165,16 +229,10 @@ void poly1305_mac(char* msg) {
 
 	char z[34];
 	mpz_get_str(z, 16, auth.block);
-	//printf("\n%s\n", z);
-/*
-	for(int i = 0; i < end_sz; i++) {
-		printf("%02x ", br[i]);
-	}
-*/
 	// print first 16 little endian bytes as the tag
 	char tag[34];
 	num_to_le_bytes(auth.acc, tag);
-	printf("tag: %s\n", tag);
+	printf("\ntag: %s\n", tag);
 	
 	// deallocate all gmp numbers
 	destroy(&auth);

@@ -40,14 +40,16 @@ int main() {
 	
 	//unsigned char st[sz];
 	// encrypt the input stream with the keystream
+	/*
 	for (int j = 0; j < 32; j++) {
 		printf("%02x", ptr[j]);
 		//st[j] = string[j] ^ ptr[j];
 	}
+	*/
 	printf("\n");
 	// deallocate memory
-	char* s = "Cryptographic Forum Research Group";
-	poly1305_mac(s);
+	//char* s = "Cryptographic Forum Research Group";
+	//poly1305_mac(s);
 	free(ptr);
 	return 0;
 }

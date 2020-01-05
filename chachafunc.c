@@ -1,4 +1,5 @@
 #include <chacha.h>
+#include <poly1305.h>
 
 uint32_t rotl(uint32_t* byte, uint8_t amt) {
 	/* circularly rotate the byte to the left by amt */
@@ -114,9 +115,19 @@ void chacha_stream(uint32_t* key, uint32_t* nonce, unsigned char* string, int bl
 	// use key and nonce to generate poly1305 key
 		// -> double check proper key/nonce generation; nonce should be
 		// used as a counter
-	for (int counter = 0; counter < 1; counter++) {
-		chacha(key, nonce, string, counter);
-	}
+	//for (int counter = 0; counter < 1; counter++) {
+	chacha(key, nonce, string, 0);
+	unsigned char key1[33] = {0};
+	unsigned char key2[33] = {0};
+
+	halve_key(string, key1, key2);
+	char s[34] = "Cryptographic Forum Research Group";
+	poly1305_mac(key1, s);
+	// discard key2; use key1 for poly1305
+
+	//FIXME: strip first half of the output (string)
+
+	//}
 
 	// pad message if necessary
 
