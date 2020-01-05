@@ -71,8 +71,8 @@ void chacha(uint32_t* key, uint32_t* nonce, unsigned char* str, uint32_t ctr) {
 	load_key(a, key);
 	load_nonce(a, nonce);
 
-	//printf("Key:\n%08x%08x%08x%08x%08x%08x%08x%08x\n", key[0],key[1],key[2],key[3],key[4],key[5],key[6],key[7]);
-	//printf("Nonce:\n%08x%08x\n",conv(a[14]),conv(a[15]));
+	printf("Key:\n%08x%08x%08x%08x%08x%08x%08x%08x\n", key[0],key[1],key[2],key[3],key[4],key[5],key[6],key[7]);
+	printf("Nonce:\n%08x%08x\n",conv(a[14]),conv(a[15]));
 
 	// copy input vector
 	uint32_t b[16];
@@ -103,16 +103,26 @@ void chacha(uint32_t* key, uint32_t* nonce, unsigned char* str, uint32_t ctr) {
 	for (int i = 0; i < 16; i++) {
 		for (int j = 0; j < 4; j++) {
 			str[k] = b[i] >> ((8*j) & 0xff);
-			//printf("%02x", str[k]);
 			k++;
 		}
 	}
-	//printf("\n");
 }
 
+// FIXME: change key and nonce arguments to use char*
 void chacha_stream(uint32_t* key, uint32_t* nonce, unsigned char* string, int blocks) {
-	for (int i = 0; i < blocks; i++)
-		chacha(key, nonce, string, i);
-	// FIXME: append ciphertext to the end of the nonce
-	// load a poly1305.h file
+	
+	// use key and nonce to generate poly1305 key
+		// -> double check proper key/nonce generation; nonce should be
+		// used as a counter
+	for (int counter = 0; counter < 1; counter++) {
+		chacha(key, nonce, string, counter);
+	}
+
+	// pad message if necessary
+
+	// generate keystream (in string variable) and xor with plaintext
+	
+	// MAC the ciphertext
+
+	// concatenate all parts of the message
 }

@@ -18,7 +18,7 @@ void print_charstream(unsigned char* st, size_t sz);
 void load_constant(uint32_t* matrix);
 void load_key();
 void load_nonce();
-void chacha(uint32_t* key, uint32_t* nonce, unsigned char* str, uint32_t ctr);
+void chacha(uint32_t* key, uint32_t* nonce, unsigned char* string, uint32_t ctr);
 void chacha_stream(uint32_t* key, uint32_t* nonce, unsigned char* string, int blocks);
 
 #endif	// CHACHA_H
